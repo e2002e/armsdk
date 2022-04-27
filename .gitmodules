@@ -19,3 +19,9 @@
 [submodule "lib/armory_tools"]
 	path = lib/armory_tools
 	url = https://github.com/armory3d/armory_tools
+[submodule "bin"]
+	path = bin
+	url = https://github.com/armory3d/Kromx_bin
+[submodule "armorcore"]
+	path = armorcore
+	url = https://github.com/armory3d/armorcore
