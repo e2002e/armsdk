@@ -300,7 +300,7 @@ class ArmoryAddonPreferences(AddonPreferences):
 
         layout.prop(self, "sdk_path")
         sdk_path = get_sdk_path(context)
-        if os.path.exists(sdk_path + '/armory') or os.path.exists(sdk_path + '/armory_backup'):
+        if os.path.exists(sdk_path + '/lib/armory') or os.path.exists(sdk_path + '/lib/armory_backup'):
             sdk_exists = True
         else:
             sdk_exists = False
@@ -565,15 +565,14 @@ def download_sdk(self, context):
             print('Armory SDK download completed, please restart Blender..')
         elif repos_done == repos_total:
             self.report({"ERROR"}, "Failed downloading Armory SDK, check console for details.")
-    git_clone(done, sdk_path, 'armory3d/armory', 'armory')
-    git_clone(done, sdk_path, 'armory3d/iron', 'iron')
+    git_clone(done, sdk_path, 'armory3d/armory', 'lib/armory')
+    git_clone(done, sdk_path, 'armory3d/iron', 'lib/iron')
     git_clone(done, sdk_path, 'armory3d/haxebullet', 'lib/haxebullet')
     git_clone(done, sdk_path, 'armory3d/haxerecast', 'lib/haxerecast')
     git_clone(done, sdk_path, 'armory3d/zui', 'lib/zui')
     git_clone(done, sdk_path, 'armory3d/armory_tools', 'lib/armory_tools')
-    git_clone(done, sdk_path, 'armory3d/Kromx_bin', 'Krom')
-    git_clone(done, sdk_path, 'armory3d/Kha', 'Kha', recursive=True)
-    git_clone(done, sdk_path, 'armory3d/nodejs_bin/', 'nodejs')
+    git_clone(done, sdk_path, 'armory3d/Kromx_bin', 'bin')
+    git_clone(done, sdk_path, 'armory3d/armorcore', 'armorcore', recursive=True)
 
 
 class ArmAddonRestoreButton(bpy.types.Operator):
@@ -588,15 +587,14 @@ class ArmAddonRestoreButton(bpy.types.Operator):
             self.report({"ERROR"}, "Configure Armory SDK path first")
             return {"CANCELLED"}
         os.chdir(sdk_path)
-        restore_repo(sdk_path, 'armory')
-        restore_repo(sdk_path, 'iron')
+        restore_repo(sdk_path, 'lib/armory')
+        restore_repo(sdk_path, 'lib/iron')
         restore_repo(sdk_path, 'lib/haxebullet')
         restore_repo(sdk_path, 'lib/haxerecast')
         restore_repo(sdk_path, 'lib/zui')
         restore_repo(sdk_path, 'lib/armory_tools')
-        restore_repo(sdk_path, 'Kha')
-        restore_repo(sdk_path, 'Krom')
-        restore_repo(sdk_path, 'nodejs')
+        restore_repo(sdk_path, 'armorcore')
+        restore_repo(sdk_path, 'bin')
         self.report({'INFO'}, 'Restored stable version')
         return {"FINISHED"}
 
