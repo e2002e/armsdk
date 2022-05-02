@@ -647,7 +647,7 @@ def start_armory(sdk_path: str):
     if sdk_path == "":
         return
 
-    armory_path = os.path.join(sdk_path, "armory")
+    armory_path = os.path.join(sdk_path, "lib", "armory")
     if not os.path.exists(armory_path):
         print("Armory load error: 'armory' folder not found in SDK path."
               " Please make sure the SDK path is correct or that the SDK"
