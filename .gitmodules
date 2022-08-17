@@ -28,3 +28,5 @@
 [submodule "Krom"]
 	path = Krom
 	url = https://github.com/armory3d/armorcore_bin
+[submodule "iron/"]
+	url = https://github.com/e2002e/iron
