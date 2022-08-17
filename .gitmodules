@@ -1,9 +1,9 @@
 [submodule "armory"]
 	path = armory
-	url = https://github.com/armory3d/armory
+	url = https://github.com/e2002e/armory
 [submodule "iron"]
 	path = iron
-	url = https://github.com/armory3d/iron
+	url = https://github.com/e2002e/iron
 [submodule "lib/haxebullet"]
 	path = lib/haxebullet
 	url = https://github.com/armory3d/haxebullet
