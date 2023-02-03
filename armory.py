@@ -6,8 +6,8 @@ bl_info = {
     "location": "Properties -> Render -> Armory Player",
     "description": "3D Game Engine for Blender",
     "author": "Armory3D.org",
-    "version": (2022, 8, 0),
-    "blender": (2, 93, 0),
+    "version": (2023, 2, 0),
+    "blender": (3, 3, 0),
     "doc_url": "https://github.com/armory3d/armory/wiki",
     "tracker_url": "https://github.com/armory3d/armory/issues"
 }
@@ -74,12 +74,9 @@ def detect_sdk_path():
     area = win.screen.areas[0]
     area_type = area.type
     area.type = "INFO"
-    override = bpy.context.copy()
-    override['window'] = win
-    override['screen'] = win.screen
-    override['area'] = win.screen.areas[0]
-    bpy.ops.info.select_all(override, action='SELECT')
-    bpy.ops.info.report_copy(override)
+    with bpy.context.temp_override(window=win, screen=win.screen, area=area):
+        bpy.ops.info.select_all(action='SELECT')
+        bpy.ops.info.report_copy()
     area.type = area_type
     clipboard = bpy.context.window_manager.clipboard
 
@@ -151,6 +148,12 @@ class ArmoryAddonPreferences(AddonPreferences):
         self.html5_copy_path = bpy.path.reduce_dirs([bpy.path.abspath(self.html5_copy_path)])[0]
 
     sdk_path: StringProperty(name="SDK Path", subtype="FILE_PATH", update=sdk_path_update, default="")
+    update_submodules: BoolProperty(
+        name="Update Submodules", default=True, description=(
+            "If enabled, update the submodules to their most current commit after downloading the SDK."
+            " Otherwise, the submodules are checked out at whatever commit the latest SDK references."
+        )
+    )
 
     show_advanced: BoolProperty(name="Show Advanced", default=False)
     tabs: EnumProperty(
@@ -168,12 +171,20 @@ class ArmoryAddonPreferences(AddonPreferences):
                  ('custom', "Custom", "Use a Custom Code Editor")],
         name="Code Editor", default='default', description='Use this editor for editing scripts')
     ui_scale: FloatProperty(name='UI Scale', description='Adjust UI scale for Armory tools', default=1.0, min=1.0, max=4.0)
-    khamake_threads: IntProperty(name='Khamake Threads', description='Allow Khamake to spawn multiple processes for faster builds', default=4, min=1)
+    khamake_threads: IntProperty(name='Khamake Processes', description='Allow Khamake to spawn multiple processes for faster builds', default=4, min=1)
+    khamake_threads_use_auto: BoolProperty(name='Auto', description='Let Khamake choose the number of processes automatically', default=False)
     compilation_server: BoolProperty(name='Compilation Server', description='Allow Haxe to create a local compilation server for faster builds', default=True)
     renderdoc_path: StringProperty(name="RenderDoc Path", description="Binary path", subtype="FILE_PATH", update=renderdoc_path_update, default="")
     ffmpeg_path: StringProperty(name="FFMPEG Path", description="Binary path", subtype="FILE_PATH", update=ffmpeg_path_update, default="")
     save_on_build: BoolProperty(name="Save on Build", description="Save .blend", default=False)
     open_build_directory: BoolProperty(name="Open Build Directory After Publishing", description="Open the build directory after successfully publishing the project", default=False)
+    cmft_use_opencl: BoolProperty(
+        name="CMFT: Use OpenCL", default=True,
+        description=(
+            "Whether to use OpenCL processing to generate radiance maps with CMFT."
+            " If you experience extremely long build times caused by CMFT, try disabling this option."
+            " For more information see https://github.com/armory3d/armory/issues/2760"
+        ))
     legacy_shaders: BoolProperty(name="Legacy Shaders", description="Attempt to compile shaders runnable on older hardware, use this for WebGL1 or GLES2 support in mobile render path", default=False)
     relative_paths: BoolProperty(name="Generate Relative Paths", description="Write relative paths in khafile", default=False)
     viewport_controls: EnumProperty(
@@ -299,9 +310,9 @@ class ArmoryAddonPreferences(AddonPreferences):
         layout.label(text="Welcome to Armory!")
 
         # Compare version Blender and Armory (major, minor)
-        if bpy.app.version[0] != 2 or bpy.app.version[1] != 93:
+        if bpy.app.version[0] != 3 or bpy.app.version[1] != 3:
             box = layout.box().column()
-            box.label(text="Warning: For Armory to work correctly, you need Blender 2.93 LTS.")
+            box.label(text="Warning: For Armory to work correctly, you need Blender 3.3 LTS.")
 
         layout.prop(self, "sdk_path")
         sdk_path = get_sdk_path(context)
@@ -318,17 +329,29 @@ class ArmoryAddonPreferences(AddonPreferences):
                 row.label(text=f'Using local SDK from {sdk_path}')
             elif sdk_source == SDKSource.ENV_VAR:
                 row.label(text=f'Using SDK from "ARMSDK" environment variable: {sdk_path}')
+
         box = layout.box().column()
-        box.label(text="Armory SDK Manager")
+
+        row = box.row(align=True)
+        row.label(text="Armory SDK Manager")
+        col = row.column()
+        col.alignment = "RIGHT"
+        col.operator("arm_addon.help", icon="URL")
+
         box.label(text="Note: Development version may run unstable!")
+        box.separator()
+
+        box.prop(self, "update_submodules")
+
         row = box.row(align=True)
         row.alignment = 'EXPAND'
-        row.operator("arm_addon.help", icon="URL")
+        row.operator("arm_addon.print_version_info", icon="INFO")
         if sdk_exists:
             row.operator("arm_addon.update", icon="FILE_REFRESH")
         else:
             row.operator("arm_addon.install", icon="IMPORT")
-        row.operator("arm_addon.restore")
+        row.operator("arm_addon.restore", icon="LOOP_BACK")
+
         if update_error_msg != '':
             col = box.column(align=True)
             col.scale_y = 0.8
@@ -372,10 +395,17 @@ class ArmoryAddonPreferences(AddonPreferences):
 
             elif self.tabs == "build":
                 box.label(text="Build Preferences")
-                box.prop(self, "khamake_threads")
+                row = box.split(factor=0.8, align=True)
+                _col = row.column(align=True)
+                _col.enabled = not self.khamake_threads_use_auto
+                _col.prop(self, "khamake_threads")
+                row.prop(self, "khamake_threads_use_auto", toggle=True)
                 box.prop(self, "compilation_server")
                 box.prop(self, "open_build_directory")
                 box.prop(self, "save_on_build")
+
+                box.separator()
+                box.prop(self, "cmft_use_opencl")
 
                 box = box_main.column()
                 box.label(text="Android Settings")
@@ -439,7 +469,6 @@ def same_path(path1: str, path2: str) -> bool:
 
 def get_sdk_path(context: bpy.context) -> str:
     """Returns the absolute path of the currently set Armory SDK.
-
     The path is read from the following sources in that priority (the
     topmost source is used if valid):
         1. Environment variable 'ARMSDK' (must be an absolute path).
@@ -467,6 +496,64 @@ def get_sdk_path(context: bpy.context) -> str:
     addon_prefs = preferences.addons["armory"].preferences
     return addon_prefs.sdk_path
 
+def apply_unix_permissions(sdk):
+    """Apply permissions to executable files in Linux and macOS
+    The .zip format does not preserve file permissions and will
+    cause every subprocess of Armory3D to not work at all. This
+    workaround fixes the issue so Armory releases will work.
+    """
+    if get_os() == 'linux':
+        paths=[
+            sdk + "/lib/armory_tools/cmft/cmft-linux64",
+            sdk + "/Krom/Krom",
+            # NodeJS
+            sdk + "/nodejs/node-linux32",
+            sdk + "/nodejs/node-linux64",
+            sdk + "/nodejs/node-linuxarm",
+            # Kha tools x64
+            sdk + "/Kha/Tools/linux_x64/haxe",
+            sdk + "/Kha/Tools/linux_x64/lame",
+            sdk + "/Kha/Tools/linux_x64/oggenc",
+            # Kha tools arm
+            sdk + "/Kha/Tools/linux_arm/haxe",
+            sdk + "/Kha/Tools/linux_arm/lame",
+            sdk + "/Kha/Tools/linux_arm/oggenc",
+            # Kha tools arm64
+            sdk + "/Kha/Tools/linux_arm64/haxe",
+            sdk + "/Kha/Tools/linux_arm64/lame",
+            sdk + "/Kha/Tools/linux_arm64/oggenc",
+            # Kinc tools x64
+            sdk + "/Kha/Kinc/Tools/linux_x64/kmake",
+            sdk + "/Kha/Kinc/Tools/linux_x64/kraffiti",
+            sdk + "/Kha/Kinc/Tools/linux_x64/krafix",
+            # Kinc tools arm
+            sdk + "/Kha/Kinc/Tools/linux_arm/kmake",
+            sdk + "/Kha/Kinc/Tools/linux_arm/kraffiti",
+            sdk + "/Kha/Kinc/Tools/linux_arm/krafix",
+            # Kinc tools arm64
+            sdk + "/Kha/Kinc/Tools/linux_arm64/kmake",
+            sdk + "/Kha/Kinc/Tools/linux_arm64/kraffiti",
+            sdk + "/Kha/Kinc/Tools/linux_arm64/krafix",
+        ]
+        for path in paths:
+            os.chmod(path, 0o777)
+
+    if get_os() == 'mac':
+        paths=[
+            sdk + "/lib/armory_tools/cmft/cmft-osx",
+            sdk + "/nodejs/node-osx",
+            sdk + "/Krom/Krom.app/Contents/MacOS/Krom",
+            # Kha tools
+            sdk + "/Kha/Tools/macos/haxe",
+            sdk + "/Kha/Tools/macos/lame",
+            sdk + "/Kha/Tools/macos/oggenc",
+            # Kinc tools
+            sdk + "/Kha/Kinc/Tools/macos/kmake",
+            sdk + "/Kha/Kinc/Tools/macos/kraffiti",
+            sdk + "/Kha/Kinc/Tools/macos/krafix",
+        ]
+        for path in paths:
+            os.chmod(path, 0o777)
 
 def remove_readonly(func, path, excinfo):
     os.chmod(path, stat.S_IWRITE)
@@ -547,7 +634,7 @@ def git_clone(done: Callable[[bool], None], rootdir: str, gitn: str, subdir: str
         run_proc(['git', 'clone', 'https://github.com/' + gitn, path, '--depth', '1'], done)
 
 
-def git_test():
+def git_test(self: bpy.types.Operator, required_version=None):
     print('Testing if git is working...')
     try:
         p = subprocess.Popen(['git', '--version'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -555,9 +642,22 @@ def git_test():
     except (OSError, Exception) as exception:
         print(str(exception))
     else:
-        if re.match("git version [0-9]+.[0-9]+.[0-9]+", output.decode('utf-8')):
-            print('Test succeeded.')
+        matched = re.match("git version ([0-9]+).([0-9]+).([0-9]+)", output.decode('utf-8'))
+        if matched:
+            if required_version is not None:
+                matched_version = (int(matched.group(1)), int(matched.group(2)), int(matched.group(3)))
+                if matched_version < required_version:
+                    msg = f"Installed git version {matched_version} is too old, please update git to version {required_version} or above"
+                    print(msg)
+                    self.report({"ERROR"}, msg)
+                    return False
+
+            print('Git test succeeded.')
             return True
+
+    msg = "Git test failed. Make sure git is installed (https://git-scm.com/downloads) or is working correctly."
+    print(msg)
+    self.report({"ERROR"}, msg)
     return False
 
 
@@ -572,6 +672,54 @@ def restore_repo(rootdir: str, subdir: str):
             # TODO: if rmtree() succeeds but rename fails the SDK needs
             #   manual cleanup by the user, add message to UI
             return
+
+
+class ArmAddonPrintVersionInfoButton(bpy.types.Operator):
+    bl_idname = "arm_addon.print_version_info"
+    bl_label = "Print Version Info"
+    bl_description = "Print detailed information about the used SDK version to the console. This requires Git"
+
+    def execute(self, context):
+        sdk_path = get_sdk_path(context)
+        if sdk_path == "":
+            self.report({"ERROR"}, "Configure Armory SDK path first")
+            return {"CANCELLED"}
+
+        if not git_test(self):
+            return {"CANCELLED"}
+
+        if not os.path.exists(f'{sdk_path}/.git'):
+            msg=f"{sdk_path}/.git not found"
+            self.report({"ERROR"}, msg)
+            return {"CANCELLED"}
+
+        def print_version_info():
+            print("==============================")
+            print("| SDK: Current commit        |")
+            print("==============================")
+            subprocess.check_call(["git", "branch", "-v"], cwd=sdk_path)
+
+            print("==============================")
+            print("| Submodules: Current commit |")
+            print("==============================")
+            subprocess.check_call(["git", "submodule", "status", "--recursive"], cwd=sdk_path)
+
+            print("==============================")
+            print("| SDK: Modified files        |")
+            print("==============================")
+            subprocess.check_call(["git", "status", "--short"], cwd=sdk_path)
+
+            print("==============================")
+            print("| Submodules: Modified files |")
+            print("==============================")
+            subprocess.check_call(["git", "submodule", "foreach", "--recursive", "git status --short"], cwd=sdk_path)
+
+            print("Done.")
+
+        # Don't block UI
+        threading.Thread(target=print_version_info).start()
+
+        return {"FINISHED"}
 
 
 class ArmAddonInstallButton(bpy.types.Operator):
@@ -609,19 +757,38 @@ def download_sdk(self: bpy.types.Operator, context):
     print('Armory (current add-on version' + str(bl_info['version']) + '): Cloning SDK repository recursively')
     if not os.path.exists(sdk_path):
         os.makedirs(sdk_path)
-    if not git_test():
-        print("Git test failed. Make sure git is installed (https://git-scm.com/downloads) or is working correctly.")
-        self.report({"ERROR"}, "Git test failed. Make sure git is installed (https://git-scm.com/downloads) or is working correctly.")
+    if not git_test(self):
         return {"CANCELLED"}
+
+    preferences = context.preferences
+    addon_prefs = preferences.addons["armory"].preferences
 
     def done(failed: bool):
         if failed:
-            self.report({"ERROR"}, "Failed downloading Armory SDK, check console for details.")
+            self.report({"ERROR"}, "Failed updating the SDK submodules, check console for details.")
         else:
             update_armory_py(sdk_path)
             print('Armory SDK download completed, please restart Blender..')
 
-    git_clone(done, sdk_path, 'armory3d/armsdk', '', recursive=True)
+    def done_clone(failed: bool):
+        if failed:
+            self.report({"ERROR"}, "Failed downloading Armory SDK, check console for details.")
+            return
+
+        if addon_prefs.update_submodules:
+            if not git_test(self, (2, 34, 0)):
+                # For some unknown (and seemingly not fixable) reason, git submodule update --remote
+                # fails in earlier versions of Git with "fatal: Needed a single revision"
+                done(True)
+            else:
+                prev_cwd = os.getcwd()
+                os.chdir(sdk_path)
+                run_proc(['git', 'submodule', 'update', '--remote', '--depth', '1', '--jobs', '4'], done)
+                os.chdir(prev_cwd)
+        else:
+            done(False)
+
+    git_clone(done_clone, sdk_path, 'armory3d/armsdk', '', recursive=True)
 
 
 class ArmAddonRestoreButton(bpy.types.Operator):
@@ -695,6 +862,8 @@ def start_armory(sdk_path: str):
               " was downloaded correctly.")
         return
 
+    apply_unix_permissions(sdk_path)
+
     scripts_path = os.path.join(armory_path, "blender")
     sys.path.append(scripts_path)
     last_scripts_path = scripts_path
@@ -758,6 +927,7 @@ def on_register_post():
 
 def register():
     bpy.utils.register_class(ArmoryAddonPreferences)
+    bpy.utils.register_class(ArmAddonPrintVersionInfoButton)
     bpy.utils.register_class(ArmAddonInstallButton)
     bpy.utils.register_class(ArmAddonUpdateButton)
     bpy.utils.register_class(ArmAddonRestoreButton)
@@ -772,6 +942,7 @@ def unregister():
     stop_armory()
     bpy.utils.unregister_class(ArmoryAddonPreferences)
     bpy.utils.unregister_class(ArmAddonInstallButton)
+    bpy.utils.unregister_class(ArmAddonPrintVersionInfoButton)
     bpy.utils.unregister_class(ArmAddonUpdateButton)
     bpy.utils.unregister_class(ArmAddonRestoreButton)
     bpy.utils.unregister_class(ArmAddonHelpButton)
@@ -780,3 +951,4 @@ def unregister():
 
 if __name__ == "__main__":
     register()
+
