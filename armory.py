@@ -6,7 +6,7 @@ bl_info = {
     "location": "Properties -> Render -> Armory Player",
     "description": "3D Game Engine for Blender",
     "author": "Armory3D.org",
-    "version": (2023, 2, 0),
+    "version": (2023, 5, 0),
     "blender": (3, 3, 0),
     "doc_url": "https://github.com/armory3d/armory/wiki",
     "tracker_url": "https://github.com/armory3d/armory/issues"
@@ -498,6 +498,7 @@ def get_sdk_path(context: bpy.context) -> str:
 
 def apply_unix_permissions(sdk):
     """Apply permissions to executable files in Linux and macOS
+
     The .zip format does not preserve file permissions and will
     cause every subprocess of Armory3D to not work at all. This
     workaround fixes the issue so Armory releases will work.
