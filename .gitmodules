@@ -1,29 +1,39 @@
 [submodule "armory"]
 	path = armory
+	branch = main
 	url = https://github.com/e2002e/armory
 [submodule "iron"]
 	path = iron
+	branch = main
 	url = https://github.com/e2002e/iron
 [submodule "lib/haxebullet"]
 	path = lib/haxebullet
+	branch = main
 	url = https://github.com/armory3d/haxebullet
 [submodule "lib/haxerecast"]
 	path = lib/haxerecast
+	branch = main
 	url = https://github.com/armory3d/haxerecast
 [submodule "lib/zui"]
 	path = lib/zui
+	branch = main
 	url = https://github.com/armory3d/zui
 [submodule "Kha"]
 	path = Kha
+	branch = main
 	url = https://github.com/armory3d/Kha
 [submodule "nodejs"]
 	path = nodejs
+	branch = main
 	url = https://github.com/armory3d/nodejs_bin
 [submodule "lib/armory_tools"]
 	path = lib/armory_tools
+	branch = main
 	url = https://github.com/armory3d/armory_tools
 [submodule "Krom"]
 	path = Krom
+	branch = main
 	url = https://github.com/armory3d/armorcore_bin
 [submodule "iron/"]
+	branch = main
 	url = https://github.com/e2002e/iron
