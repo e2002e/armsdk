@@ -12,7 +12,7 @@
 	url = https://github.com/armory3d/haxebullet
 [submodule "lib/haxerecast"]
 	path = lib/haxerecast
-	branch = main
+	branch = master
 	url = https://github.com/armory3d/haxerecast
 [submodule "lib/zui"]
 	path = lib/zui
@@ -33,7 +33,4 @@
 [submodule "Krom"]
 	path = Krom
 	branch = main
-	url = https://github.com/armory3d/armorcore_bin
-[submodule "iron/"]
-	branch = main
-	url = https://github.com/e2002e/iron
+	url = https://github.com/e2002e/armorcore_bin
