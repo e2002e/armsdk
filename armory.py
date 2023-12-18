@@ -509,7 +509,7 @@ def apply_unix_permissions(sdk):
             os.path.join(sdk, "lib/armory_tools/cmft/cmft-linux64"),
             os.path.join(sdk, "Krom/Krom"),
             # NodeJS
-            #os.path.join(sdk, "nodejs/node-linux32"),
+            os.path.join(sdk, "nodejs/node-linux32"),
             os.path.join(sdk, "nodejs/node-linux64"),
             os.path.join(sdk, "nodejs/node-linuxarm"),
             # Kha tools x64

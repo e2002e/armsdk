@@ -21,7 +21,7 @@
 [submodule "Kha"]
 	path = Kha
 	branch = main
-	url = https://github.com/armory3d/Kha
+	url = https://github.com/e2002e/Kha
 [submodule "nodejs"]
 	path = nodejs
 	branch = main
