@@ -33,4 +33,4 @@
 [submodule "Krom"]
 	path = Krom
 	branch = main
-	url = https://github.com/e2002e/armorcore_bin
+	url = https://github.com/e2002e/Krom
