@@ -1,10 +1,10 @@
 [submodule "armory"]
 	path = armory
-	branch = main
+	branch = voxelgi
 	url = https://github.com/e2002e/armory
 [submodule "iron"]
 	path = iron
-	branch = main
+	branch = voxelgi
 	url = https://github.com/e2002e/iron
 [submodule "lib/haxebullet"]
 	path = lib/haxebullet
@@ -21,7 +21,7 @@
 [submodule "Kha"]
 	path = Kha
 	branch = main
-	url = https://github.com/e2002e/Kha
+	url = https://github.com/armory3d/Kha
 [submodule "nodejs"]
 	path = nodejs
 	branch = main
