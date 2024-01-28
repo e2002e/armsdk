@@ -1,6 +1,6 @@
 [submodule "armory"]
 	path = armory
-	branch = voxelgi
+	branch = AO_clipmaps
 	url = https://github.com/e2002e/armory
 [submodule "iron"]
 	path = iron
