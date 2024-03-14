@@ -4,7 +4,7 @@
 	url = https://github.com/e2002e/armory
 [submodule "iron"]
 	path = iron
-	branch = voxelgi
+	branch = main
 	url = https://github.com/e2002e/iron
 [submodule "lib/haxebullet"]
 	path = lib/haxebullet
@@ -20,7 +20,7 @@
 	url = https://github.com/armory3d/zui
 [submodule "Kha"]
 	path = Kha
-	branch = voxelgi
+	branch = main
 	url = https://github.com/armory3d/Kha
 [submodule "nodejs"]
 	path = nodejs
@@ -32,5 +32,5 @@
 	url = https://github.com/armory3d/armory_tools
 [submodule "Krom"]
 	path = Krom
-	branch = main
+	branch = 46a1179
 	url = https://github.com/e2002e/armorcore_bin
