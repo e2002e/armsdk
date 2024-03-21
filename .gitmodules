@@ -4,7 +4,7 @@
 	url = https://github.com/e2002e/armory
 [submodule "iron"]
 	path = iron
-	branch = main
+	branch = gi_clipmaps
 	url = https://github.com/e2002e/iron
 [submodule "lib/haxebullet"]
 	path = lib/haxebullet
