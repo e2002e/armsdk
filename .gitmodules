@@ -1,10 +1,10 @@
 [submodule "armory"]
 	path = armory
-	branch = gi_clipmaps
+	branch = 79e6c35
 	url = https://github.com/e2002e/armory
 [submodule "iron"]
 	path = iron
-	branch = gi_clipmaps
+	branch = e2f4750
 	url = https://github.com/e2002e/iron
 [submodule "lib/haxebullet"]
 	path = lib/haxebullet
