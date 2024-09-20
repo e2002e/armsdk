@@ -15,7 +15,7 @@
 	url = https://github.com/armory3d/zui
 [submodule "Kha"]
 	path = Kha
-	url = https://github.com/armory3d/Kha
+	url = https://github.com/e2002e/Kha
 [submodule "nodejs"]
 	path = nodejs
 	url = https://github.com/armory3d/nodejs_bin
